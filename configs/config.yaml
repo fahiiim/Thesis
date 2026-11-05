@@ -1,0 +1,51 @@
+# Configuration for CG-HAF Evaluation & Quantitative XAI Pipeline
+# Tailored for NVIDIA GeForce RTX 5070 (12GB VRAM)
+
+device:
+  cuda: true
+  device_id: 0
+  mixed_precision: true         # fp16 / amp
+  cudnn_benchmark: true         # Optimal GEMM kernel search
+  num_workers: 4
+  pin_memory: true
+  batch_size: 16                # Tuned for RTX 5070 12GB VRAM
+
+model:
+  backbone: "swin_v2_b"
+  num_classes: 7
+  image_size: 224
+  checkpoint_path: "weights/swin_vit_xai_model.pth"
+  classes:
+    - akiec
+    - bcc
+    - bkl
+    - df
+    - mel
+    - nv
+    - vasc
+
+csm:
+  weights:
+    wA: 1.0    # Asymmetry
+    wB: 1.2    # Border irregularity (highest clinical weight)
+    wC: 0.9    # Color variation
+    wD: 1.0    # Diameter
+  hsv_kernel_size: 15
+  canny_low: 50
+  canny_high: 150
+
+gcw:
+  lambda_fusion: 0.5
+  blur_kernel: 11
+  blur_sigma: 2.0
+
+evaluation:
+  deletion_steps: 10
+  sanity_check_layers:
+    - "head"
+    - "layers.3"
+    - "layers.2"
+    - "layers.1"
+    - "layers.0"
+  output_dir: "outputs"
+
