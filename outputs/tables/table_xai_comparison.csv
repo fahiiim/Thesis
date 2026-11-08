@@ -1,0 +1,7 @@
+Method,Pointing Game Hit Rate (%),Energy Inside Mask (%),Deletion AUC (Lower is Better),Insertion AUC (Higher is Better)
+CG-HAF (Proposed),28.00%,63.84%,0.7145,0.8265
+GCW (Ours),4.00%,24.37%,0.4864,0.8505
+CSM (ABCD),36.00%,79.98%,0.7592,0.6319
+Grad-CAM,64.00%,51.02%,0.7373,0.5442
+Integrated Gradients,24.00%,46.36%,0.4876,0.5863
+SmoothGrad,16.00%,38.10%,0.4074,0.8279

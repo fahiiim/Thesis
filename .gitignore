@@ -1,1 +1,113 @@
-.venv
+# ==============================================================================
+# Bytecode & Python Cache
+# ==============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ==============================================================================
+# Virtual Environments
+# ==============================================================================
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ==============================================================================
+# Large Datasets & Raw Image Archives
+# (Store datasets on local drive or DVC/cloud storage, never in git)
+# ==============================================================================
+data/
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# Retain directory structure if needed
+!data/.gitkeep
+
+# ==============================================================================
+# Model Weights & Pretrained Checkpoints (>100MB binary files)
+# ==============================================================================
+weights/
+!weights/.gitkeep
+*.pth
+*.pt
+*.bin
+*.ckpt
+*.onnx
+*.safetensors
+
+# ==============================================================================
+# Jupyter Notebooks & Temporary Scratch Files
+# ==============================================================================
+.ipynb_checkpoints/
+*-checkpoint.ipynb
+.virtual_documents/
+
+# ==============================================================================
+# Kaggle API & Temporary Download Artifacts
+# ==============================================================================
+.kaggle/
+kaggle.json
+kaggle_test_outputs/
+
+# ==============================================================================
+# Logs, Profiling, & Experiment Tracking
+# ==============================================================================
+*.log
+runs/
+wandb/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ==============================================================================
+# IDE & Operating System Files
+# ==============================================================================
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# PyCharm / JetBrains
+.idea/
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride

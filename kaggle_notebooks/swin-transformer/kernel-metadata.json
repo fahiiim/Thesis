@@ -1,0 +1,27 @@
+{
+  "id": "fahimsarker/swin-transformer",
+  "id_no": 87100419,
+  "title": "Swin Transformer",
+  "code_file": "swin-transformer.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": false,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "keywords": [
+    "gpu"
+  ],
+  "dataset_sources": [
+    "utkarshps/skin-cancer-mnist10000-ham-augmented-dataset",
+    "fahimsarker/ham10000-augmented-fahimsarker",
+    "kmader/skin-cancer-mnist-ham10000"
+  ],
+  "kernel_sources": [],
+  "competition_sources": [],
+  "model_sources": [
+    "fahimsarker/unet/PyTorch/default/1"
+  ],
+  "docker_image": "gcr.io/kaggle-private-byod/python@sha256:320043e14c68293f1c946585b9257123385205a58af4b94b17d31868cae4e868",
+  "machine_shape": "NvidiaTeslaT4"
+}

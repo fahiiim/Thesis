@@ -1,0 +1,7 @@
+Randomization Step,GCW Spearman r,CG-HAF Spearman r,Grad-CAM Spearman r
+Original (Trained),1.0000,1.0000,1.0000
+Top Layer (Classifier.5),0.9684,0.9513,-0.1763
+Classifier Head (All FC),0.9769,0.9644,0.2699
++ Swin Stage 4,0.9594,0.9447,0.0977
++ Swin Stage 3,0.7235,0.7836,0.0198
++ Complete Backbone,0.6372,0.7699,0.1052
