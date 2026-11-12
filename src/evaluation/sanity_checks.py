@@ -50,7 +50,10 @@ class ModelRandomizationSanityCheck:
             Dictionary mapping layer stage to Spearman rank correlation with original attribution.
         """
         # Baseline: Attribution from the trained model
-        orig_map, _, _ = self.gcw_engine.compute_input_gcw(image_tensor, target_class=target_class)
+        if hasattr(self.gcw_engine, "compute_hierarchical_gcw"):
+            orig_map, _, _ = self.gcw_engine.compute_hierarchical_gcw(image_tensor, target_class=target_class)
+        else:
+            orig_map, _, _ = self.gcw_engine.compute_input_gcw(image_tensor, target_class=target_class)
         orig_flat = orig_map.flatten()
 
         # Deepcopy model to preserve original trained state
@@ -73,7 +76,10 @@ class ModelRandomizationSanityCheck:
             self._randomize_layer(curr)
 
             # Compute new attribution map on perturbed model
-            pert_map, _, _ = perturbed_engine.compute_input_gcw(image_tensor, target_class=target_class)
+            if hasattr(perturbed_engine, "compute_hierarchical_gcw"):
+                pert_map, _, _ = perturbed_engine.compute_hierarchical_gcw(image_tensor, target_class=target_class)
+            else:
+                pert_map, _, _ = perturbed_engine.compute_input_gcw(image_tensor, target_class=target_class)
             pert_flat = pert_map.flatten()
 
             corr, _ = spearmanr(orig_flat, pert_flat)

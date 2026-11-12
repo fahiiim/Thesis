@@ -1,8 +1,11 @@
-\begin{tabular}{lll}
+\begin{tabular}{lllll}
 \toprule
-Method & External Energy Inside Mask (%) & External Pointing Game Hit (%) \\
+Method & External Energy in ROI (%) & External Pointing Hit (%) & External Deletion AUC (Lower Better) & External Insertion AUC (Higher Better) \\
 \midrule
-CG-HAF (Proposed) & 44.25% & 40.00% \\
-Grad-CAM & 17.28% & 35.00% \\
+CG-HAF (Proposed) & 52.46% & 91.43% & 0.4815 & 0.7877 \\
+Swin-GCW (Ours) & 48.08% & 52.86% & 0.4857 & 0.7856 \\
+CSM (ABCD) & 76.51% & 95.71% & 0.5796 & 0.7192 \\
+Grad-CAM (Stage 4) & 54.07% & 64.29% & 0.4847 & 0.8046 \\
+Integrated Gradients & 44.91% & 65.71% & 0.4420 & 0.7784 \\
 \bottomrule
 \end{tabular}

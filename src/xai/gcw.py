@@ -1,21 +1,23 @@
 """
 Gradient Coherence Weighting (GCW) Module.
-Implements spatial gradient coherence analysis for Vision Transformers (Algorithm 2 in CG-HAF),
-providing both input-space channel coherence and intermediate Swin feature coherence.
+Implements spatial gradient coherence analysis for Swin Transformer V2,
+extracting channel-wise L2-normalized gradient coherence both across
+hierarchical Swin Transformer feature stages (Stages 3 & 4) and input space.
 """
 
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 import cv2
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class GradientCoherenceWeighting:
     """
-    Computes Gradient Coherence Weighting (GCW) to isolate diagnostically reliable features.
-    Unlike conventional magnitude-based attribution, GCW evaluates spatial coherence
-    via channel-wise L2 normalization.
+    Computes Gradient Coherence Weighting (GCW) for Swin Transformer V2.
+    Handles torchvision Swin-V2 channels-last (B, H, W, C) stage tensors and
+    performs GPU-accelerated gradient coherence extraction.
     """
     def __init__(
         self,
@@ -30,119 +32,131 @@ class GradientCoherenceWeighting:
         self.blur_sigma = blur_sigma
         self.eps = 1e-8
 
+    @staticmethod
+    def _to_bchw(tensor: torch.Tensor) -> torch.Tensor:
+        """Converts Swin (B, H, W, C) or (B, N, C) feature tensors to (B, C, H, W)."""
+        if tensor.ndim == 4:
+            # Heuristic: in Swin features, channel dim is at axis -1 (128, 256, 512, 1024)
+            if tensor.shape[-1] >= tensor.shape[1] and tensor.shape[1] == tensor.shape[2]:
+                return tensor.permute(0, 3, 1, 2).contiguous()
+            return tensor
+        elif tensor.ndim == 3:
+            b, n, c = tensor.shape
+            g = int(np.sqrt(n))
+            return tensor.view(b, g, g, c).permute(0, 3, 1, 2).contiguous()
+        raise ValueError(f"Unsupported tensor rank for spatial reshape: {tensor.shape}")
+
+    def _norm_blur(self, heatmap: np.ndarray) -> np.ndarray:
+        """Normalizes heatmap to [0, 1] and applies isotropic Gaussian smoothing."""
+        h_min, h_max = np.min(heatmap), np.max(heatmap)
+        norm = (heatmap - h_min) / (h_max - h_min + self.eps)
+        if self.blur_kernel > 0:
+            norm = cv2.GaussianBlur(norm.astype(np.float32), (self.blur_kernel, self.blur_kernel), self.blur_sigma)
+            norm = (norm - np.min(norm)) / (np.max(norm) - np.min(norm) + self.eps)
+        return norm.astype(np.float32)
+
     def compute_input_gcw(
         self,
         image_tensor: torch.Tensor,
         target_class: Optional[int] = None
     ) -> Tuple[np.ndarray, int, float]:
         """
-        Computes input-space GCW according to Algorithm 2.
-
-        Args:
-            image_tensor: Normalized tensor of shape (1, 3, H, W).
-            target_class: Target class index. If None, uses top predicted class.
-
-        Returns:
-            gcw_map: Normalized 2D spatial heatmap [0, 1].
-            pred_idx: Predicted class index.
-            confidence: Softmax probability of target class.
+        Computes input-space channel-coherence weighted gradients.
         """
         self.model.eval()
-        image_tensor = image_tensor.clone().detach().to(self.device).requires_grad_(True)
+        inp = image_tensor.clone().detach().to(self.device).requires_grad_(True)
 
-        logits = self.model(image_tensor)
+        logits = self.model(inp)
         probs = torch.softmax(logits, dim=-1)
-
-        if target_class is None:
-            pred_idx = torch.argmax(probs, dim=-1).item()
-        else:
-            pred_idx = target_class
-
-        confidence = probs[0, pred_idx].item()
-        score = logits[0, pred_idx]
+        pred_idx = int(torch.argmax(probs, dim=-1).item()) if target_class is None else int(target_class)
+        confidence = float(probs[0, pred_idx].item())
 
         self.model.zero_grad()
-        score.backward()
+        logits[0, pred_idx].backward()
 
-        # Gradient tensor: (1, 3, H, W) -> (3, H, W)
-        grads = image_tensor.grad.detach()[0]  # shape: (3, H, W)
+        grads = inp.grad.detach()[0]  # (3, H, W)
+        channel_norms = torch.sqrt(torch.sum(grads ** 2, dim=(1, 2)) + self.eps)
+        alpha_norm = channel_norms / (torch.norm(channel_norms, p=2) + self.eps)
 
-        # Step 3: Calculate Channel-Wise Coherence (L2 norm per channel)
-        # alpha_k = sqrt( sum_{i,j} G_{i,j,k}^2 )
-        channel_norms = torch.sqrt(torch.sum(grads ** 2, dim=(1, 2)) + self.eps)  # (3,)
-
-        # Step 4: Normalize Coherence Weights to unit vector
-        alpha_norm = channel_norms / (torch.norm(channel_norms, p=2) + self.eps)  # (3,)
-
-        # Step 5: Apply Coherence Weighting
-        abs_grads = torch.abs(grads)
-        weighted_grad = torch.sum(alpha_norm.view(3, 1, 1) * abs_grads, dim=0)  # (H, W)
-
-        # Min-max normalization
-        g_min = torch.min(weighted_grad)
-        g_max = torch.max(weighted_grad)
-        norm_map = (weighted_grad - g_min) / (g_max - g_min + self.eps)
-
-        gcw_map = norm_map.cpu().numpy()
-
-        # Gaussian smoothing to reduce pixel-level sampling artifacts
-        if self.blur_kernel > 0:
-            gcw_map = cv2.GaussianBlur(
-                gcw_map,
-                (self.blur_kernel, self.blur_kernel),
-                self.blur_sigma
-            )
-            gcw_map = (gcw_map - np.min(gcw_map)) / (np.max(gcw_map) - np.min(gcw_map) + self.eps)
-
-        return gcw_map, pred_idx, confidence
+        weighted_grad = torch.sum(alpha_norm.view(3, 1, 1) * torch.abs(grads), dim=0)
+        return self._norm_blur(weighted_grad.cpu().numpy()), pred_idx, confidence
 
     def compute_hierarchical_gcw(
         self,
         image_tensor: torch.Tensor,
-        stage_name: str = "stage_4",
-        target_class: Optional[int] = None
-    ) -> np.ndarray:
+        stage_indices: Tuple[int, ...] = (5, 7),
+        target_class: Optional[int] = None,
+        include_input_detail: bool = False
+    ) -> Tuple[np.ndarray, int, float]:
         """
-        Extends GCW to intermediate Swin Transformer stages.
-        Measures coherence across intermediate transformer feature channels.
+        Computes genuine Hierarchical Swin Transformer Gradient Coherence Weighting (GCW)
+        by hooking shifted-window attention stage outputs (e.g., Stage 3 at features[5]
+        and Stage 4 at features[7]) in a single forward/backward pass on GPU.
         """
         self.model.eval()
-        image_tensor = image_tensor.clone().detach().to(self.device)
+        inp = image_tensor.clone().detach().to(self.device).requires_grad_(include_input_detail)
+        h, w = inp.shape[2], inp.shape[3]
 
-        logits = self.model(image_tensor)
-        if target_class is None:
-            target_class = torch.argmax(logits, dim=-1).item()
+        stage_acts = {}
+        stage_grads = {}
+        handles = []
 
-        score = logits[0, target_class]
-        self.model.zero_grad()
-        score.backward(retain_graph=True)
+        for idx in stage_indices:
+            module = self.model.backbone.features[idx]
 
-        if not hasattr(self.model, "hook_gradients") or stage_name not in self.model.hook_gradients:
-            raise KeyError(f"Hook gradients not registered for '{stage_name}'. Call register_stage_hooks() first.")
+            def make_fwd(k):
+                def _fwd(mod, mod_in, mod_out):
+                    stage_acts[k] = mod_out.detach()
+                return _fwd
 
-        stage_grad = self.model.hook_gradients[stage_name][0]  # (C, H_s, W_s) or (tokens, C)
-        if stage_grad.ndim == 2:
-            # Reshape tokens to 2D grid
-            num_tokens, channels = stage_grad.shape
-            grid_size = int(np.sqrt(num_tokens))
-            stage_grad = stage_grad.view(grid_size, grid_size, channels).permute(2, 0, 1)
+            def make_bwd(k):
+                def _bwd(mod, gin, gout):
+                    stage_grads[k] = gout[0].detach()
+                return _bwd
 
-        # Coherence norm across spatial coordinates
-        coherence = torch.sqrt(torch.sum(stage_grad ** 2, dim=(1, 2)) + self.eps)
-        coherence_norm = coherence / (torch.norm(coherence, p=2) + self.eps)
+            handles.append(module.register_forward_hook(make_fwd(idx)))
+            handles.append(module.register_full_backward_hook(make_bwd(idx)))
 
-        # Weight feature channels
-        feature_act = self.model.hook_activations[stage_name][0]
-        if feature_act.ndim == 2:
-            grid_size = int(np.sqrt(feature_act.shape[0]))
-            feature_act = feature_act.view(grid_size, grid_size, -1).permute(2, 0, 1)
+        try:
+            logits = self.model(inp)
+            probs = torch.softmax(logits, dim=-1)
+            pred_idx = int(torch.argmax(probs, dim=-1).item()) if target_class is None else int(target_class)
+            confidence = float(probs[0, pred_idx].item())
 
-        stage_map = torch.sum(coherence_norm.view(-1, 1, 1) * torch.relu(feature_act), dim=0)
-        stage_map = stage_map.detach().cpu().numpy()
+            self.model.zero_grad()
+            logits[0, pred_idx].backward()
+        finally:
+            for handle in handles:
+                handle.remove()
 
-        # Upsample to image size (224x224)
-        h, w = image_tensor.shape[2:]
-        upsampled = cv2.resize(stage_map, (w, h), interpolation=cv2.INTER_CUBIC)
-        norm_stage = (upsampled - np.min(upsampled)) / (np.max(upsampled) - np.min(upsampled) + self.eps)
-        return norm_stage
+        # Fuse gradient coherence maps across hooked Swin stages on GPU
+        fused_stage_map = torch.zeros((1, 1, h, w), device=self.device)
+        for idx in stage_indices:
+            grad = self._to_bchw(stage_grads[idx])   # (1, C, H_s, W_s)
 
+            # Channel-wise spatial gradient coherence (L2 norm per feature channel)
+            coherence = torch.sqrt(torch.sum(grad ** 2, dim=(2, 3), keepdim=True) + self.eps)  # (1, C, 1, 1)
+            coherence_norm = coherence / (torch.norm(coherence, p=2, dim=1, keepdim=True) + self.eps)
+
+            # Coherence-weighted spatial gradient magnitudes |G_c| (strictly positive lesion salience)
+            weighted = torch.sum(coherence_norm * torch.abs(grad), dim=1, keepdim=True)  # (1, 1, H_s, W_s)
+            up = F.interpolate(weighted, size=(h, w), mode="bilinear", align_corners=False)
+            up_min, up_max = up.min(), up.max()
+            up_norm = (up - up_min) / (up_max - up_min + self.eps)
+            fused_stage_map += up_norm
+
+        fused_stage_map = fused_stage_map / max(len(stage_indices), 1)
+
+        if include_input_detail and inp.grad is not None:
+            in_grads = inp.grad.detach()  # (1, 3, H, W)
+            ch_norms = torch.sqrt(torch.sum(in_grads ** 2, dim=(2, 3), keepdim=True) + self.eps)
+            alpha_in = ch_norms / (torch.norm(ch_norms, p=2, dim=1, keepdim=True) + self.eps)
+            in_map = torch.sum(alpha_in * torch.abs(in_grads), dim=1, keepdim=True)
+            in_norm = (in_map - in_map.min()) / (in_map.max() - in_map.min() + self.eps)
+            # Combine 75% hierarchical Swin feature coherence + 25% fine spatial gradient coherence
+            combined = 0.75 * fused_stage_map + 0.25 * in_norm
+        else:
+            combined = fused_stage_map
+
+        gcw_np = combined[0, 0].cpu().numpy()
+        return self._norm_blur(gcw_np), pred_idx, confidence

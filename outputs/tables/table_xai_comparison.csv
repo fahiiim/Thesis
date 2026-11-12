@@ -1,7 +1,7 @@
-Method,Pointing Game Hit Rate (%),Energy Inside Mask (%),Deletion AUC (Lower is Better),Insertion AUC (Higher is Better)
-CG-HAF (Proposed),28.00%,63.84%,0.7145,0.8265
-GCW (Ours),4.00%,24.37%,0.4864,0.8505
-CSM (ABCD),36.00%,79.98%,0.7592,0.6319
-Grad-CAM,64.00%,51.02%,0.7373,0.5442
-Integrated Gradients,24.00%,46.36%,0.4876,0.5863
-SmoothGrad,16.00%,38.10%,0.4074,0.8279
+Method,Pointing Hit (%),Energy Inside GT (%),Top-20% GT IoU (%),Deletion AUC (Lower Better),Insertion AUC (Higher Better)
+CG-HAF (Proposed),62.14%,48.31 ± 26.09,39.86 ± 16.38,0.4796 ± 0.3225,0.7800 ± 0.2316
+Swin-GCW (Ours),63.57%,46.51 ± 27.36,34.94 ± 16.48,0.4983 ± 0.3134,0.7762 ± 0.2286
+CSM (ABCD),51.43%,61.64 ± 25.25,30.23 ± 20.67,0.5224 ± 0.3230,0.7425 ± 0.2532
+Grad-CAM (Stage 4),82.14%,59.78 ± 29.24,42.46 ± 16.26,0.4716 ± 0.3447,0.8040 ± 0.2179
+Integrated Gradients,83.57%,44.45 ± 19.23,24.45 ± 8.90,0.5236 ± 0.3526,0.8037 ± 0.2364
+SmoothGrad,87.86%,53.45 ± 16.90,35.90 ± 14.57,0.5069 ± 0.3371,0.8162 ± 0.2329

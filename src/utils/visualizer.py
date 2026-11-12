@@ -114,7 +114,7 @@ class PublicationVisualizer:
         fig.colorbar(im1, ax=axes[1], fraction=0.046, pad=0.04)
 
         im2 = axes[2].imshow(gcw_map, cmap="inferno", vmin=0, vmax=1)
-        axes[2].set_title("Bottom-Up: GCW (Swin Attention)")
+        axes[2].set_title("Bottom-Up: Hierarchical Swin-GCW")
         axes[2].axis("off")
         fig.colorbar(im2, ax=axes[2], fraction=0.046, pad=0.04)
 

@@ -1,0 +1,5 @@
+External Cohort,Preprocessing,N,Accuracy (%),Macro F1,Mean ROC-AUC,Melanoma AUC
+MSKCC / ViDIR (New York),Raw RGB,2903,42.44%,0.1776,0.6622,0.6335
+MSKCC / ViDIR (New York),Shades-of-Gray CC,2903,56.49%,0.1941,0.6906,0.6204
+BCN_20000 (Barcelona),Raw RGB,11982,40.61%,0.3485,0.7405,0.7110
+BCN_20000 (Barcelona),Shades-of-Gray CC,11982,42.60%,0.3592,0.7485,0.6924

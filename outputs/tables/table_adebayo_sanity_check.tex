@@ -1,12 +1,12 @@
 \begin{tabular}{llll}
 \toprule
-Randomization Step & GCW Spearman r & CG-HAF Spearman r & Grad-CAM Spearman r \\
+Randomization Step & Swin-GCW Spearman r & CG-HAF Spearman r & Grad-CAM (Stage 4) Spearman r \\
 \midrule
 Original (Trained) & 1.0000 & 1.0000 & 1.0000 \\
-Top Layer (Classifier.5) & 0.9684 & 0.9513 & -0.1763 \\
-Classifier Head (All FC) & 0.9769 & 0.9644 & 0.2699 \\
-+ Swin Stage 4 & 0.9594 & 0.9447 & 0.0977 \\
-+ Swin Stage 3 & 0.7235 & 0.7836 & 0.0198 \\
-+ Complete Backbone & 0.6372 & 0.7699 & 0.1052 \\
+Top Layer (Classifier.5) & 0.9942 & 0.9943 & 0.0515 \\
+Classifier Head (All FC) & 0.9925 & 0.9931 & 0.5346 \\
++ Swin Stage 4 & 0.8734 & 0.8915 & 0.0103 \\
++ Swin Stage 3 & -0.3134 & 0.1506 & 0.0294 \\
++ Complete Backbone & -0.4709 & -0.0073 & -0.0748 \\
 \bottomrule
 \end{tabular}
