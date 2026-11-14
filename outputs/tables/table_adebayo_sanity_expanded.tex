@@ -1,0 +1,12 @@
+\begin{tabular}{lllllll}
+\toprule
+Randomization Step & Sobel Edge Filter & CSM (Clinical ABCD) & Grad-CAM (Stage 4) & Swin-GCW (Ours) & CG-HAF (Proposed, λ=0.5) & Grad-CAM + CSM (λ=0.5) \\
+\midrule
+Original (Trained) & 1.0000 & 1.0000 & 1.0000 & 1.0000 & 1.0000 & 1.0000 \\
+Top Layer (Classifier.5) & 1.0000 & 1.0000 & -0.0776 & 0.9932 & 0.9933 & 0.2091 \\
+Classifier Head (All FC) & 1.0000 & 1.0000 & -0.0479 & 0.9925 & 0.9930 & 0.2435 \\
++ Swin Stage 4 & 1.0000 & 1.0000 & 0.1946 & 0.8715 & 0.8917 & 0.4207 \\
++ Swin Stage 3 & 1.0000 & 1.0000 & 0.0907 & -0.3647 & 0.1103 & 0.3939 \\
++ Complete Backbone & 1.0000 & 1.0000 & 0.0179 & -0.3357 & 0.0901 & 0.4017 \\
+\bottomrule
+\end{tabular}
