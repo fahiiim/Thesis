@@ -245,3 +245,4 @@ We re-evaluated all $N=4,500$ held-out unsegmented test images using our dedicat
 - **Formatting:** Compiled cleanly in single-column format (21 pages, PDF size 4.8 MB) with zero LaTeX errors.
 
 We believe these substantial revisions thoroughly resolve every concern raised and elevate the manuscript to the highest standards of biomedical machine learning research.
+
