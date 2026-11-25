@@ -18,14 +18,14 @@ class LocalizationMetrics:
     def __init__(self, eps: float = 1e-8):
         self.eps = eps
 
-    def pointing_game_hit(self, attribution_map: np.ndarray, binary_mask: np.ndarray) -> bool:
+    def pointing_game_hit(self, attribution_map: np.ndarray, binary_mask: np.ndarray, rtol: float = 1e-6) -> float:
         """
-        Tests if the maximum activation point falls within the ground-truth lesion boundary.
+        Tests if the maximum activation point(s) fall within the ground-truth lesion boundary.
+        Resolves ties (e.g. on binary masks) in expectation across all maximal pixels.
         """
-        # Find (row, col) of max attribution
-        max_loc = np.unravel_index(np.argmax(attribution_map), attribution_map.shape)
-        hit = bool(binary_mask[max_loc[0], max_loc[1]] > 0)
-        return hit
+        mx = float(np.max(attribution_map))
+        peaks = attribution_map >= mx - rtol * max(abs(mx), 1.0)
+        return float(np.mean(binary_mask[peaks] > 0))
 
     def energy_inside_mask(self, attribution_map: np.ndarray, binary_mask: np.ndarray) -> float:
         """
