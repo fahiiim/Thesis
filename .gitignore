@@ -85,7 +85,6 @@ htmlcov/
 # ==============================================================================
 # IDE & Operating System Files
 # ==============================================================================
-.vscode/
 .idea/
 *.code-workspace
 
@@ -119,3 +118,5 @@ paper/*.log
 paper/*.out
 paper/*.fls
 paper/*.fdb_latexmk
+config.bat
+node_modules
