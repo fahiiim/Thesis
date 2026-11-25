@@ -140,7 +140,7 @@ def main():
 
     # 1. Full Unfiltered Cohort Generalization (Raw vs GPU Shades-of-Gray)
     summary_cohorts = []
-    for name, df_sub in [("MSKCC / ViDIR (New York)", df_mskcc), ("BCN_20000 (Barcelona)", df_bcn)]:
+    for name, df_sub in [("ISIC archive (pre-2018, mixed sources)", df_mskcc), ("BCN_20000 (Barcelona)", df_bcn)]:
         trues, p_raw, p_sog = evaluate_cohort_batched(model, df_sub, img_dir)
         present = sorted(np.unique(trues).tolist())
         for mode, probs in [("Raw RGB", p_raw), ("Shades-of-Gray CC", p_sog)]:
