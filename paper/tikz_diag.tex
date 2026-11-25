@@ -1,0 +1,35 @@
+% Standalone LaTeX TikZ diagram illustrating the Pre-Norm LayerNorm Jacobian Trap vs Swin-TCAM Resolution
+\begin{tikzpicture}[
+    font=\footnotesize\sffamily,
+    node distance=0.35cm and 0.5cm,
+    blk/.style={rectangle, rounded corners=3pt, draw=black!70, line width=0.65pt, align=center, inner sep=4pt, minimum height=0.85cm},
+    trap/.style={blk, fill=red!7, draw=red!65!black},
+    fix/.style={blk, fill=blue!7, draw=blue!65!black},
+    res/.style={blk, fill=gray!8, draw=gray!75!black},
+    arr/.style={-{Stealth[length=4.5pt,width=3.5pt]}, line width=0.75pt, draw=black!75}
+]
+
+% Row 1: Legacy Swin-GCW (Pre-Norm Trap)
+\node[blk, fill=orange!8, minimum width=2.2cm] (a_in) {\textbf{Pre-Norm Tokens}\\$A_p \in \mathbb{R}^{H\times W\times C}$\\(\texttt{features[7]})};
+\node[trap, right=0.55cm of a_in, minimum width=3.1cm] (ln1) {\textbf{Final LayerNorm}\\$\tilde{A}_p = \gamma \odot \frac{A_p - \mu_p}{\sigma_p} + \beta$};
+\node[trap, right=0.55cm of ln1, minimum width=3.1cm] (head1) {\textbf{Raw Logit $z_c$}\\$z_c \rightarrow$ Backprop to $A_p$};
+\node[trap, right=0.55cm of head1, minimum width=4.0cm] (out1) {\textbf{Legacy Swin-GCW Fault}\\$|\partial z_c/\partial A_p| \approx \frac{1}{\sigma_p} |\partial z_c/\partial \tilde{A}_p|$\\$r(\cdot, 1/\sigma_p)=0.9995$;\; Head-Rand $r=0.987$};
+
+\draw[arr] (a_in) -- (ln1);
+\draw[arr] (ln1) -- (head1);
+\draw[arr] (head1) -- (out1);
+
+% Row 2: Swin-TCAM (Post-Norm Contrastive Fix)
+\node[blk, fill=teal!7, below=0.85cm of a_in, minimum width=2.2cm] (b_in) {\textbf{Stage-3 LayerCAM}\\$A^{(3)}_p, \partial s_c/\partial A^{(3)}_p$\\(\texttt{features[5]})};
+\node[fix, right=0.55cm of b_in, minimum width=3.1cm] (ln2) {\textbf{Post-Norm Tokens}\\$\tilde{A}_p$ (\texttt{backbone.norm})\\$1/\sigma_p$ Already Applied};
+\node[fix, right=0.55cm of ln2, minimum width=3.1cm] (head2) {\textbf{Log-Odds Target}\\$s_c = z_c - \log\sum_{j\neq c} e^{z_j}$};
+\node[fix, right=0.55cm of head2, minimum width=4.0cm] (out2) {\textbf{Swin-TCAM Resolution}\\No Jacobian $1/\sigma_p$ Contamination\\Head-Rand $r=0.194$;\; Contrast $r=0.158$};
+
+\draw[arr] (b_in) -- (ln2);
+\draw[arr] (ln2) -- (head2);
+\draw[arr] (head2) -- (out2);
+
+% Vertical link showing Post-Norm Grad-CAM + Stage-3 LayerCAM fusion
+\draw[arr, draw=blue!65!black] (b_in.south) -- ++(0,-0.25) -| (out2.south);
+
+\end{tikzpicture}

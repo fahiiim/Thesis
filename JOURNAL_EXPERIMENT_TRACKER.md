@@ -1,46 +1,35 @@
-# CG-HAF Journal Publication Upgrade Tracker
+# CG-HAF Journal Publication Upgrade Tracker (Revision v2)
 
-**Target Venues:** *Computers in Biology and Medicine* / *IEEE Journal of Biomedical and Health Informatics (JBHI)* / *Biomedical Signal Processing and Control*  
+**Target Venues:** *IEEE Transactions on Medical Imaging (TMI)* / *IEEE Journal of Biomedical and Health Informatics (JBHI)* / *Medical Image Analysis (MedIA)*  
 **Lead Hardware Engine:** Local NVIDIA GeForce RTX 5070 (12.82 GB VRAM, Blackwell `sm_120`, CUDA 13.0, Tensor-Core AMP)  
-**Last Updated:** November 14, 2026
+**Last Updated:** November 25, 2026
 
 ---
 
-## Overall Progress
+## Overall Progress Summary
 
-| Phase | Description | Status | Verified Outputs |
+| Phase | Description | Status | Verified Deliverables & CSVs |
 | :--- | :--- | :---: | :--- |
-| **Phase 1** | Local Blackwell Setup & Checkpoint Verification | **COMPLETED** | `weights/swin_vit_xai_model.pth`, PyTorch 2.14+cu130 (`sm_120`), 4,500 unsegmented HAM10000 test split + 10,015 Tschandl GT masks |
-| **Phase 2** | Class-Stratified Quantitative XAI Benchmark ($N=140$) | **COMPLETED** | `outputs/tables/table_xai_comparison.tex`, `faithfulness_comparison_benchmark.png` |
-| **Phase 3** | Adebayo Cascading Randomization & $\lambda$-Ablation ($N=70$) | **COMPLETED** | `outputs/tables/table_adebayo_sanity_check.tex`, `table_ablation_lambda.tex`, 300 DPI plots |
-| **Phase 4** | Multi-Center External Validation (MSKCC $N=2,903$ & BCN_20000 $N=11,982$) | **COMPLETED** | `table_external_cohorts_full.tex`, `table_external_multicenter_validation.tex`, `external_roc_curves_bcn20000.png`, `external_confusion_matrix_bcn20000.png` |
-| **Phase 5** | External Domain-Shift XAI Faithfulness ($N=70$ BCN_20000) | **COMPLETED** | `table_external_xai_comparison.tex` |
-| **Phase 6** | Research Paper Authorship & Camera-Ready PDF Compilation | **COMPLETED** | `paper/main.tex`, `paper/main.pdf` (19 pages), `paper/references.bib` |
+| **P0: Data & Checkpoint Audit** | Audited checkpoint history, unsegmented vs cutout inference, dark corners | **VERIFIED** | `outputs/tables/audit_data_integrity.json` (Epoch 10 saved, unsegmented Acc 76.98%, cutouts 12.71%, 4,500/4,500 Tschandl masks present) |
+| **P0: LayerNorm Jacobian Audit** | Diagnosed pre-norm gradient scaling by $1/\sigma_p$ | **VERIFIED** | `outputs/tables/diagnose_gcw_layernorm.csv` ($r_{GCW, 1/\sigma_p} = +0.9995 \pm 0.0010$, Head-Rand $r = 0.987 \pm 0.014$, Class-Sens $r = 0.986 \pm 0.015$) |
+| **P1: Swin-TCAM Module** | Implemented post-norm Grad-CAM + Stage-3 LayerCAM + log-odds | **VERIFIED** | `src/xai/token_cam.py` (Restores Head-Rand $r = 0.194 \pm 0.565$, Class-Sens $r = 0.158 \pm 0.519$) |
+| **P1: CSM-v2 Clinical Module** | Implemented FOV vignette masking, DullRazor, GrabCut, Stolz TDS weights | **VERIFIED** | `outputs/tables/csm_v2_segmentation_eval.csv` ($55.89\% \rightarrow 61.20\%$ IoU, $p < 10^{-15}$), `csm_v2_clinical_tds_signal.csv` (MEL-vs-NV TDS AUC = 0.7285) |
+| **P1: Evidence-Gated Fusion** | Formulated EG-HAF ($M = (N+\varepsilon)g$), proven Propositions 1 & 2 | **VERIFIED** | `outputs/tables/proposition2_leakage_verify.csv` (0 violations / 369 evaluations), `outputs/tables/additive_leakage_verify.csv`, `outputs/tables/kappa_tradeoff_v2.csv` |
+| **P1: Internal BCTS Calibration** | 5-fold lesion-grouped OOF calibration on $N=4,500$ HAM10000 | **VERIFIED** | `outputs/tables/calibration_internal_parity.csv` (ECE-15 $19.58\% \rightarrow 1.75\%$, Classwise ECE $1.15\%$, Accuracy $76.93\% \rightarrow 86.87\%$) |
+| **P2: Streaming External TTA** | Multi-center streaming TTA ladder (A$\rightarrow$I) on $14,885$ external lesions | **VERIFIED** | `outputs/tables/external_tta_bcn.csv` ($N=11,982$: Acc $40.75\% \rightarrow 50.07\%$, Macro AUC $0.7409 \rightarrow 0.7900$, MEL Sens $42.84\% \rightarrow 54.85\%$) |
+| **P2: 12-Block Adebayo Check** | Cascading & Independent randomization across 12 blocks $\times$ 3 seeds | **VERIFIED** | `outputs/tables/sanity_v2_cascading.csv`, `outputs/tables/sanity_v2_independent.csv` |
+| **P2: Counterfactual Benchmark** | Centred ($N=338$) vs De-Centred ($N=175$) views against 5 controls | **VERIFIED** | `outputs/tables/xai_benchmark_v2_centred.csv`, `outputs/tables/xai_benchmark_v2_decentred.csv`, `outputs/tables/xai_benchmark_v2_stats.csv` (EG-HAF SRG $+6.154$ nats, beats Grad-CAM $p=3.42\times 10^{-5}$) |
+| **P2: Shortcut-Detection Audit** | Spurious ink marker on melanoma images (Adebayo ICLR 2022 protocol) | **VERIFIED** | `outputs/tables/shortcut_detection_audit.csv` (100% flip rate, 60/60; Swin-TCAM 10.74% patch energy, EG-HAF 10.64%, >99% shortcut preservation) |
+| **P3: Camera-Ready Manuscript** | Clean 18-page single-column manuscript compiled with pdflatex + bibtex | **VERIFIED** | `paper/main.tex`, `paper/main.pdf` (18 pages, 2.6 MB, 0 errors, 0 undefined citations), 7 verified 300-DPI figures in `paper/figures/` |
+| **P3: Reviewer Response Letter** | Detailed point-by-point response addressing every critique | **VERIFIED** | `Response_to_Reviewers.md` (completely overhauled) |
 
 ---
 
-## Verified Experimental Findings
+## Key Experimental Findings Summary
 
-### 1. Internal Unsegmented HAM10000 Evaluation & Methodological Fixes
-- **Evaluation Protocol:** Switched from pre-segmented black cutouts to unsegmented dermoscopic lesions (`N=4,500` split: Acc `76.82%`, Macro F1 `0.8005`, Macro ROC-AUC `0.9779`) paired with **official dermatologist lesion masks** (`HAM10000_segmentations_lesion_tschandl`) — eliminating inverted-background and Otsu-circularity artifacts.
-- **Clinical-Neural Alignment (`N=70` stratified, 10/class):** Mean Pearson correlation between CSM (ABCD) and Hierarchical Swin-GCW = **`+0.4107`**, Pointing Game Hit Rate = **`65.71%`**, Top-20% GT IoU = **`41.44%`**.
-
-### 2. Multi-Method Stratified Benchmark (`N=140`, 20/class × 7 classes)
-- **Top-20% GT IoU:** CG-HAF (**`39.86 ± 16.38%`**) outperforms both standalone Swin-GCW (`34.94 ± 16.48%`) and standalone CSM (`30.23 ± 20.67%`), as well as Integrated Gradients (`24.45%`) and SmoothGrad (`35.90%`).
-- **Deletion AUC (Lower is Better):** CG-HAF (**`0.4796 ± 0.3225`**) outperforms Swin-GCW (`0.4983`), CSM (`0.5224`), SmoothGrad (`0.5069`), and Integrated Gradients (`0.5236`).
-- **Insertion AUC (Higher is Better):** CG-HAF (**`0.7800 ± 0.2316`**) improves over both Swin-GCW (`0.7762`) and CSM (`0.7425`).
-- **Wilcoxon Signed-Rank (CG-HAF vs Stage-4 Grad-CAM):** Energy $p = 3.30 \times 10^{-21}$, Insertion $p = 1.94 \times 10^{-3}$, Deletion $p = 0.102$.
-
-### 3. Sanity Checks & Hyperparameter Ablation
-- **Adebayo Cascading Randomization (`N=14` stratified):** Spearman rank correlation drops from `1.0000` down to **`-0.4709` (Swin-GCW)** and **`-0.0073` (CG-HAF)** across cascading backbone randomization, proving strict model-parameter dependence.
-- **$\lambda$-Sensitivity (`N=70` stratified vs official GT masks):**
-  - Pointing Game Hit Rate peaks at **$\lambda=0.3$ (`74.29%`)** and **$\lambda=0.4$ (`70.00%`)** (vs `61.43%` pure GCW and `50.00%` pure CSM).
-  - Deletion AUC reaches its minimum (optimal faithfulness) at **$\lambda=0.5\text{--}0.6$ (`0.4500` / `0.4499`)** vs `0.4803` ($\lambda=0.0$) and `0.4809` ($\lambda=1.0$).
-
-### 4. Multi-Center External Validation (Zero-Shot, Non-HAM10000)
-- **MSKCC / ViDIR (`N=2,903`):** Shades-of-Gray Color Constancy lifts zero-shot accuracy from `42.44%` $\rightarrow$ **`56.49%`** (+14.05%) and Mean ROC-AUC from `0.6622` $\rightarrow$ **`0.6906`**.
-- **BCN_20000 (`N=11,982`):** Shades-of-Gray improves accuracy `40.61%` $\rightarrow$ **`42.60%`** and Mean ROC-AUC `0.7405` $\rightarrow$ **`0.7485`** (and **`0.7622`** Macro AUC on balanced `N=420` cohort).
-- **External XAI Faithfulness & Localization (`N=70` BCN_20000, 10/class):**
-  - **External Pointing Hit Rate:** CG-HAF achieves **`91.43%`**, beating Stage-4 Grad-CAM (`64.29%`), Integrated Gradients (`65.71%`), and standalone Swin-GCW (`52.86%`).
-  - **External Deletion AUC:** CG-HAF (`0.4815`) beats Stage-4 Grad-CAM (`0.4847`), Swin-GCW (`0.4857`), and CSM (`0.5796`).
-  - **External Insertion AUC:** CG-HAF (`0.7877`) beats Swin-GCW (`0.7856`), Integrated Gradients (`0.7784`), and CSM (`0.7192`).
+1. **LayerNorm Jacobian Collapse:** In pre-norm vision transformers, gradient attributions with respect to pre-norm tokens are scaled by $1/\sigma_p$ ($r = +0.9995$). Swin-TCAM eliminates this pathology by tapping tokens post-norm at \texttt{backbone.norm} and employing contrastive log-odds scoring.
+2. **Photographer Centering Bias:** Non-learned Center Gaussian achieves $98.22\%$ pointing accuracy and $71.38\%$ IoU on centered lesions, but collapses to $55.43\%$ pointing and $32.06\%$ IoU when lesions are de-centred.
+3. **Perturbation Faithfulness:** EG-HAF achieves an SRG of $+6.154$ nats [95\% CI: $5.664, 6.633$], significantly outperforming Stage-4 Grad-CAM ($+5.732$, Holm-adjusted $p = 3.42 \times 10^{-5}$) and improving boundary localization over Swin-TCAM ($p = 1.77 \times 10^{-44}$).
+4. **Shortcut Preservation:** In a verified $100\%$ flip-rate shortcut model, EG-HAF preserves $10.64\% \pm 1.52\%$ of patch energy compared to $10.74\% \pm 1.28\%$ for pure neural Swin-TCAM, demonstrating that evidence-gating does not conceal model vulnerabilities.
+5. **Probability Calibration:** Bias-Corrected Temperature Scaling (BCTS) eliminates severe overconfidence, lowering ECE-15 from $19.58\%$ to $1.75\%$ and classwise ECE to $1.15\%$.
+6. **Zero-Shot Generalization:** Streaming TTA without target labels lifts BCN\_20000 Macro AUC from $0.7409$ to $0.7900$ and balanced BCN Macro AUC to $0.8273$.

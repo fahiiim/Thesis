@@ -1,0 +1,58 @@
+% Standalone LaTeX TikZ architecture diagram for Swin-TCAM + CSM-v2 + EG-HAF + BCTS/TTA
+\begin{tikzpicture}[
+    font=\footnotesize\sffamily,
+    node distance=0.45cm and 0.65cm,
+    box/.style={rectangle, rounded corners=3pt, draw=black!75, line width=0.7pt, align=center, inner sep=5pt, minimum height=1.05cm},
+    nbox/.style={box, fill=blue!7, draw=blue!60!black},
+    cbox/.style={box, fill=teal!7, draw=teal!65!black},
+    fbox/.style={box, fill=orange!12, draw=orange!75!black},
+    dbox/.style={box, fill=violet!7, draw=violet!65!black},
+    io/.style={rectangle, rounded corners=2pt, draw=gray!80, fill=gray!10, align=center, inner sep=4pt, minimum height=0.8cm},
+    arr/.style={-{Stealth[length=5pt,width=4pt]}, line width=0.8pt, draw=black!75},
+    darr/.style={-{Stealth[length=4.5pt,width=3.5pt]}, line width=0.7pt, dashed, draw=black!65}
+]
+
+% Input
+\node[io, minimum width=2.1cm] (inp) {\textbf{Input Image}\\$X \in \mathbb{R}^{224\times224\times3}$\\(Parity-Resized)};
+
+% Top branch: Swin-TCAM
+\node[nbox, right=0.8cm of inp, yshift=1.45cm, minimum width=3.35cm] (swin) {\textbf{SwinV2-B Backbone}\\Stages 1--4 + \texttt{PatchMerging}\\Stage-3 (\texttt{f[5]}) \& Stage-4 (\texttt{f[7]})};
+\node[nbox, right=0.7cm of swin, minimum width=3.3cm] (lnorm) {\textbf{Post-Norm \& Log-Odds}\\Tap after \texttt{backbone.norm}\\$s_c = z_c - \log\sum_{j\neq c} e^{z_j}$};
+\node[nbox, right=0.7cm of lnorm, minimum width=2.95cm] (tcam) {\textbf{Swin-TCAM ($N$)}\\Post-Norm Grad-CAM\\+ Stage-3 LayerCAM};
+
+% Bottom branch: CSM-v2
+\node[cbox, right=0.8cm of inp, yshift=-1.45cm, minimum width=3.35cm] (prep) {\textbf{Artefact Filtering}\\FOV Vignette Masking\\DullRazor + Flat-Field};
+\node[cbox, right=0.7cm of prep, minimum width=3.3cm] (seg) {\textbf{Polarity-Safe GrabCut}\\$\eta$-Selected Otsu + Polarity\\Quality Score $q \in [0,1]$};
+\node[cbox, right=0.7cm of seg, minimum width=2.95cm] (abcd) {\textbf{CSM-v2 Prior ($P$)}\\Stolz TDS-Share A/B/C/D\\($1.3:0.1:0.5:0.5$)};
+
+% Evidence-Gated Fusion
+\node[fbox, right=0.85cm of tcam, yshift=-1.45cm, minimum width=3.4cm, minimum height=2.25cm] (eghaf) {\textbf{Evidence-Gated Fusion}\\(\textbf{EG-HAF})\\[2pt]$\kappa = \kappa_{\max}\cdot q\cdot c_y$\\$g = (1-\kappa) + \kappa P$\\$M = (N + \varepsilon)\cdot g$};
+
+% Outputs from EG-HAF & Calibration/TTA branch
+\node[io, right=0.7cm of eghaf, minimum width=2.2cm] (xaiout) {\textbf{Faithful Map $M$}\\Bounded Leakage (Prop. 2)\\Shortcut Floor $1-\kappa$ (Prop. 1)};
+
+% Calibration & External TTA track (below EG-HAF -> Prediction)
+\node[dbox, below=0.55cm of abcd, minimum width=4.4cm] (calib) {\textbf{Disjoint Internal Calibration (OOF)}\\Bias-Corrected Temp.\ Scaling (BCTS) + Cost/Sens Threshold};
+\node[dbox, right=0.75cm of calib, minimum width=4.4cm] (tta) {\textbf{Streaming External TTA (Zero Target Labels)}\\Masked SoG $\rightarrow$ AdaBN Head $\rightarrow$ EM Prior $\rightarrow$ Dihedral-8};
+
+% Connections
+\draw[arr] (inp.east) -- ++(0.35,0) |- (swin.west);
+\draw[arr] (inp.east) -- ++(0.35,0) |- (prep.west);
+
+\draw[arr] (swin) -- (lnorm);
+\draw[arr] (lnorm) -- (tcam);
+
+\draw[arr] (prep) -- (seg);
+\draw[arr] (seg) -- (abcd);
+
+\draw[arr] (tcam.east) -- ++(0.35,0) |- ([yshift=0.55cm]eghaf.west);
+\draw[arr] (abcd.east) -- ++(0.35,0) |- ([yshift=-0.55cm]eghaf.west);
+\draw[darr] (seg.south) -- ++(0,-0.28) -| node[pos=0.25, below, font=\scriptsize] {Quality $q$} ([yshift=-0.85cm]eghaf.west);
+
+\draw[arr] (eghaf) -- (xaiout);
+
+% Classification & TTA connections
+\draw[arr] (lnorm.south) -- ++(0,-0.32) -- ++(2.6,0) |- (calib.west);
+\draw[arr] (calib) -- (tta);
+
+\end{tikzpicture}

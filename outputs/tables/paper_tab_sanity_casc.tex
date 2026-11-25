@@ -1,0 +1,12 @@
+\begin{tabular}{lccccc}
+\toprule
+Block & Legacy Swin-GCW & Stage-4 Grad-CAM & Swin-TCAM & EG-HAF (k=0.5) & Additive CG-HAF (0.5) \\
+\midrule
+classifier.5 & 0.9910 $\pm$ 0.013 & -0.2097 $\pm$ 0.764 & -0.0221 $\pm$ 0.576 & 0.0094 $\pm$ 0.581 & 0.3784 $\pm$ 0.489 \\
+backbone.norm & 0.9872 $\pm$ 0.016 & 0.1862 $\pm$ 0.788 & 0.2529 $\pm$ 0.605 & 0.2754 $\pm$ 0.596 & 0.5211 $\pm$ 0.455 \\
+Stage 4 (features.7) & 0.8810 $\pm$ 0.075 & 0.3066 $\pm$ 0.714 & 0.1085 $\pm$ 0.542 & 0.1354 $\pm$ 0.534 & 0.4557 $\pm$ 0.418 \\
+Stage 3 (features.5) & -0.4407 $\pm$ 0.244 & -0.0389 $\pm$ 0.295 & -0.1310 $\pm$ 0.193 & -0.1083 $\pm$ 0.197 & 0.3758 $\pm$ 0.235 \\
+Stage 1 (features.1) & -0.4622 $\pm$ 0.234 & -0.0241 $\pm$ 0.323 & -0.1042 $\pm$ 0.249 & -0.0799 $\pm$ 0.253 & 0.3788 $\pm$ 0.256 \\
+PatchEmbed (features.0) & -0.4240 $\pm$ 0.217 & 0.0048 $\pm$ 0.301 & -0.1354 $\pm$ 0.213 & -0.1130 $\pm$ 0.216 & 0.3721 $\pm$ 0.233 \\
+\bottomrule
+\end{tabular}

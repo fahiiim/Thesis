@@ -8,7 +8,7 @@ Head: Dropout(0.2) -> Linear(1024, 256) -> ReLU -> BatchNorm1d(256) -> Dropout(0
 from typing import Dict, Optional, Tuple
 import torch
 import torch.nn as nn
-from torchvision.models import swin_v2_b
+from torchvision.models import swin_v2_b, Swin_V2_B_Weights
 
 
 class EnhancedSwinTransformer(nn.Module):
@@ -21,10 +21,12 @@ class EnhancedSwinTransformer(nn.Module):
         num_classes: int = 7,
         dropout_rate: float = 0.2,
         use_batchnorm: bool = True,
-        checkpoint_path: Optional[str] = None
+        checkpoint_path: Optional[str] = None,
+        pretrained: bool = False
     ):
         super().__init__()
-        self.backbone = swin_v2_b(weights=None)
+        weights = Swin_V2_B_Weights.DEFAULT if pretrained else None
+        self.backbone = swin_v2_b(weights=weights)
         num_features = self.backbone.head.in_features
         self.backbone.head = nn.Identity()
 
